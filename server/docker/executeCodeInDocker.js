@@ -1,63 +1,71 @@
 const Docker = require("dockerode");
 const { logExecution } = require("./logExecution");
+const LANGUAGE_CONFIGS = require("../config/languageConfigs");
+const createTempFile = require("../utils/createTempFile");
+const ensureImageExists = require("../utils/ensureImageExists");
+const withTimeout = require("../utils/withTimeout");
 const docker = new Docker();
 // const path = require("path");
 // const seccompProfilePath = path.resolve(__dirname, "security", "seccomp.json");
 
-const executeCodeInDocker = async (code) => {
+const executeCodeInDocker = async (code, language) => {
   const timeout = 5000; // 5 seconds limit
   // console.log(seccompProfilePath);
+
+  if (!LANGUAGE_CONFIGS[language]) {
+    throw new Error(`Language ${language} is not supported.`);
+  }
+
+  const { image, cmd, needsFile, getFileName, getClassName } =
+    LANGUAGE_CONFIGS[language];
+
   try {
-    // create a docker container that runs node.js
-    const container = await docker.createContainer({
-      Image: "node:14", // Use Node.js 14 Docker image
-      Cmd: ["node", "-e", code], // Execute the JavaScript code
-      Tty: false,
-      HostConfig: {
-        //AutoRemove: true, // Automatically remove the container after execution
-        Memory: 512 * 1024 * 1024, // 512MB memory limit
-        CpuShares: 512, // CPU limit
-        // SecurityOpt: [`seccomp=${seccompProfilePath}`], // Set seccomp profile
-        // SecurityOpt: ["apparmor=rce-apparmor-profile"], // Attach the AppArmor profile
-      },
-    });
+    await ensureImageExists(docker, image);
+
+    let container;
+
+    if (needsFile) {
+      // Special handling if the language requires a code file (e.g., Java)
+      const fileName =
+        language === "java" ? getFileName() : `/tmp/code.${language}`;
+      // const fileName = `/tmp/code.${language}`;
+      // const fileName = getFileName();
+      const className = language === "java" ? getClassName() : "";
+      const codeFile = await createTempFile(code, language);
+
+      // Create the Docker container with the code mounted as a file
+      container = await docker.createContainer({
+        Image: image,
+        Cmd: cmd(fileName, className),
+        Tty: false,
+        HostConfig: {
+          Memory: 512 * 1024 * 1024, // 512MB memory limit
+          CpuShares: 512, // CPU limit
+          Binds: [`${codeFile}:${fileName}`], // Bind the temp file into the container
+        },
+      });
+    } else {
+      // Create a Docker container that runs the code without needing a file
+      container = await docker.createContainer({
+        Image: image,
+        Cmd: cmd(code), // Dynamic command based on the language
+        Tty: false,
+        HostConfig: {
+          Memory: 512 * 1024 * 1024, // 512MB memory limit
+          CpuShares: 512, // CPU limit
+        },
+      });
+    }
 
     // start the container
     await container.start();
 
-    // capture the output of the container
-    const outputPromise = await containerLogs(container);
-
-    // Timeout logic to stop containers running too long
-    let timeoutHandle;
-    try {
-      timeoutHandle = setTimeout(async () => {
-        try {
-          const updatedInfo = await container.inspect();
-          if (updatedInfo.State.Running) {
-            await container.stop(); // Stop the container after the timeout
-          }
-        } catch (stopError) {
-          if (stopError.statusCode === 404) {
-            console.log("Container not found at stop attempt.");
-          } else {
-            console.error("Error stopping container:", stopError);
-          }
-        }
-      }, timeout);
-    } catch (inspectError) {
-      if (inspectError.statusCode === 404) {
-        console.log("Container not found at inspect attempt.");
-      } else {
-        console.error("Error inspecting container:", inspectError);
-      }
-    }
-
     // Wait for the output and cleanup
-    const output = await outputPromise;
-
-    // Clear the timeout if the container has stopped before timeout
-    clearTimeout(timeoutHandle);
+    const output = await withTimeout(
+      containerLogs(container),
+      timeout,
+      container
+    );
 
     // remove the container
     await container.remove();
@@ -66,8 +74,8 @@ const executeCodeInDocker = async (code) => {
 
     return output;
   } catch (error) {
-    console.error("Execution error:", error);
-    throw new Error("Execution failed");
+    console.error("Execution error:", error.message, "\nStack:", error.stack);
+    throw new Error("Execution failed due to an error.");
   }
 };
 
@@ -103,4 +111,5 @@ const containerLogs = async (container) => {
     );
   });
 };
+
 module.exports = { executeCodeInDocker };

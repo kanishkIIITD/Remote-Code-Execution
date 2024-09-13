@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
     "dev": "nodemon index.js"
   },
   "keywords": [],
@@ -12,8 +13,11 @@
   "description": "",
   "dependencies": {
     "bull": "^4.16.3",
+    "child_process": "^1.0.2",
     "cors": "^2.8.5",
     "dockerode": "^4.0.2",
+    "dotenv": "^16.4.5",
+    "esprima": "^4.0.1",
     "express": "^4.19.2",
     "mongoose": "^8.6.1",
     "nodemon": "^3.1.4"
