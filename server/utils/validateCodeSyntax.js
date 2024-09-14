@@ -1,6 +1,6 @@
 const esprima = require("esprima");
-const { spawnSync } = require("child_process");
-const fs = require("fs");
+// const { spawnSync } = require("child_process");
+// const fs = require("fs");
 
 const validators = {
   javascript: (code) => {

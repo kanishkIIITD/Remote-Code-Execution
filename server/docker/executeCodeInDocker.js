@@ -5,12 +5,9 @@ const createTempFile = require("../utils/createTempFile");
 const ensureImageExists = require("../utils/ensureImageExists");
 const withTimeout = require("../utils/withTimeout");
 const docker = new Docker();
-// const path = require("path");
-// const seccompProfilePath = path.resolve(__dirname, "security", "seccomp.json");
 
 const executeCodeInDocker = async (code, language) => {
   const timeout = 5000; // 5 seconds limit
-  // console.log(seccompProfilePath);
 
   if (!LANGUAGE_CONFIGS[language]) {
     throw new Error(`Language ${language} is not supported.`);
@@ -28,8 +25,6 @@ const executeCodeInDocker = async (code, language) => {
       // Special handling if the language requires a code file (e.g., Java)
       const fileName =
         language === "java" ? getFileName() : `/tmp/code.${language}`;
-      // const fileName = `/tmp/code.${language}`;
-      // const fileName = getFileName();
       const className = language === "java" ? getClassName() : "";
       const codeFile = await createTempFile(code, language);
 

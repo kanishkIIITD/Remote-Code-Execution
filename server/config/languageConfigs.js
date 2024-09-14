@@ -8,14 +8,10 @@ const LANGUAGE_CONFIGS = {
     image: "python:3.9",
     cmd: (code) => ["python", "-c", code], // Command to execute Python code
   },
-  // ruby: {
-  //   image: "ruby:3.0",
-  //   cmd: (code) => ["ruby", "-e", code], // Command to execute Ruby code
-  // },
 
   java: {
-    image: "openjdk:11-jre-slim", // or "openjdk:17-jre-slim"
-    // image: "openjdk:latest", // Using the OpenJDK Docker image
+    // image: "openjdk:17-jre-slim", //"openjdk:11-jre-slim", // or
+    image: "openjdk:latest", // Using the OpenJDK Docker image
     cmd: (fileName, className) => [
       "sh",
       "-c",
