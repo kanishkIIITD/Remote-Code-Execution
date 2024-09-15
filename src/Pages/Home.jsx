@@ -5,7 +5,7 @@ import axios from "axios"; // For making API calls
 import defaultCodes from "../utils/defaultCode.json";
 
 const Home = () => {
-  const [language, setLanguage] = useState("javascript"); // Default language
+  const [language, setLanguage] = useState("cpp"); // Default language
   const [code, setCode] = useState(""); // Code from editor
   const [output, setOutput] = useState(""); // Store output from API
   const [jobId, setJobId] = useState(null);
@@ -38,7 +38,7 @@ const Home = () => {
         const newLeftWidth =
           e.clientX -
           document.querySelector(".flex").getBoundingClientRect().left;
-        if (newLeftWidth > 100 && newLeftWidth < window.innerWidth - 100) {
+        if (newLeftWidth > 300 && newLeftWidth < window.innerWidth - 300) {
           // Set boundaries
           setLeftWidth(newLeftWidth);
         }
@@ -127,23 +127,30 @@ const Home = () => {
     <div className="flex flex-col items-center h-full gap-4">
       <h1 className="text-3xl font-bold">Remote Code Execution</h1>
       <div className="flex gap-2 items-center">
-        <label htmlFor="language-select" className="text-xl font-semibold">
+        {/* <label htmlFor="language-select" className="text-xl font-semibold">
           Select Language:
-        </label>
+        </label> */}
         <select
           id="language-select"
           value={language}
           onChange={handleLanguageChange}
           className="border-2 border-black rounded-lg p-1 cursor-pointer"
         >
-          <option value="javascript">JavaScript</option>
-          <option value="python">Python</option>
           <option value="cpp">C++</option>
           <option value="java">Java</option>
+          <option value="python 3">Python</option>
+          <option value="javascript">JavaScript</option>
         </select>
+        <button
+          onClick={handleSubmit}
+          disabled={!code.trim()}
+          className="border-2 border-black h-fit rounded-lg p-1 cursor-pointer"
+        >
+          Submit
+        </button>
       </div>
 
-      <div className="flex h-fit w-full p-10 ">
+      <div className="flex h-fit w-full p-10 bg-[#0F0F0F]">
         <div className="h-full " style={{ width: leftWidth }}>
           {showEditor && (
             <Editor
@@ -157,29 +164,54 @@ const Home = () => {
               onChange={handleEditorChange}
             />
           )}
-
-          <button
-            onClick={handleSubmit}
-            disabled={!code.trim()}
-            className="border-2 border-black h-fit rounded-lg p-1 cursor-pointer"
-          >
-            Submit
-          </button>
         </div>
 
         {/* divider */}
         <div
           onMouseDown={handleMouseDown}
-          className="w-3 h-[70vh] bg-black cursor-e-resize rounded-lg"
-        />
+          className="w-2 h-[70vh] bg-[#0F0F0F] cursor-col-resize hover:bg-[#191919] flex flex-col items-center justify-center gap-1"
+        >
+          <div className="flex gap-[2px]">
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+          </div>
+          <div className="flex gap-[2px]">
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+          </div>
+          <div className="flex gap-[2px]">
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+          </div>
+          <div className="flex gap-[2px]">
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+          </div>
+          <div className="flex gap-[2px]">
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+          </div>
+          <div className="flex gap-[2px]">
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+          </div>
+          <div className="flex gap-[2px]">
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+            <div className="bg-white h-[2px] w-[2px] rounded-full"></div>
+          </div>
+        </div>
 
         <div
-          className="h-[70vh] overflow-auto ml-5 gap-3 p-5 bg-gray-200 rounded-lg"
+          className="h-[70vh] overflow-auto  gap-3 p-5 bg-[#1E1E1E] relative"
           style={{ width: `calc(100% - ${leftWidth}px)` }}
         >
-          <h2 className="text-xl font-semibold ">Output:</h2>
+          <h2 className="text-xl font-semibold absolute top-0 left-5 text-white bg-[#111111] px-2 pb-1 rounded-lg rounded-t-none">
+            Output
+          </h2>
 
-          <pre>{output}</pre>
+          <pre className="mt-5 text-[#8F949F]">
+            {output || "Your Output Will Be Displayed Here ..."}
+          </pre>
         </div>
       </div>
     </div>
