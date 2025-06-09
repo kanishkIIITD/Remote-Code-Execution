@@ -36,7 +36,7 @@ rce-app/
 ### 1. Clone the repository
 
 ```sh
-git clone <your-repo-url>
+git clone https://github.com/kanishkIIITD/Remote-Code-Execution
 cd rce-app
 ```
 
