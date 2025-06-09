@@ -1,70 +1,143 @@
-# Getting Started with Create React App
+# Remote Code Execution (RCE) Web Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A full-stack web application that allows users to write, submit, and execute code in multiple languages (C++, Java, Python, JavaScript) securely in isolated Docker containers. The app features real-time job status updates, syntax validation, and robust error handling.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Multi-language support:** C++, Java, Python, JavaScript
+- **Monaco Editor** for code editing
+- **Job queue** with Bull and Redis for scalable execution
+- **Secure Docker sandboxing** (resource limits, network disabled, seccomp on Linux)
+- **Syntax validation** before execution for all languages
+- **Real-time job status polling**
+- **Clear error feedback** for syntax, runtime, and system errors
 
-### `npm start`
+## Project Structure
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```
+rce-app/
+  src/           # React frontend
+  server/        # Node.js/Express backend
+  public/        # Static files for frontend
+  package.json   # Frontend dependencies/scripts
+  README.md
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Prerequisites
 
-### `npm test`
+- **Node.js** (v16+ recommended)
+- **npm** (v8+ recommended)
+- **Docker** (required for code execution)
+- **Redis** (can be run via Docker Compose)
+- **MongoDB** (optional, for logging if enabled)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Quick Start
 
-### `npm run build`
+### 1. Clone the repository
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```sh
+git clone <your-repo-url>
+cd rce-app
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 2. Install dependencies
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```sh
+npm install
+cd server
+npm install
+cd ..
+```
 
-### `npm run eject`
+### 3. Environment Variables
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Create a `.env` file in `server/` with the following (if using MongoDB):
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+MONGO_URI=mongodb://localhost:27017/rce
+REDIS_URL=redis://localhost:6379
+PORT=5000
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+> If you use Docker Compose, these are set up automatically.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 4. Start Redis (and MongoDB, if needed)
 
-## Learn More
+You can use Docker Compose for all services:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```sh
+cd server
+docker-compose up
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Or run Redis and MongoDB manually if you prefer.
 
-### Code Splitting
+### 5. Start the Application
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+From the root directory:
 
-### Analyzing the Bundle Size
+```sh
+npm run dev
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- This runs both the frontend (React) and backend (Express) concurrently.
+- The frontend will be available at [http://localhost:3000](http://localhost:3000)
+- The backend API runs at [http://localhost:5000](http://localhost:5000) (proxied for frontend requests).
 
-### Making a Progressive Web App
+## Usage
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+1. **Select a language** from the dropdown.
+2. **Write or paste your code** in the Monaco editor.
+3. **Click Submit** to run the code.
+4. **View output or errors** in the output panel. The app will show real-time job status and display any syntax or runtime errors.
 
-### Advanced Configuration
+## API Endpoints
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+- `POST /api/v1/execute`  
+  Submit code for execution.  
+  **Body:** `{ code: string, language: string }`  
+  **Returns:** `{ jobId: string, status: string }`
 
-### Deployment
+- `GET /api/v1/job-status/:jobId`  
+  Poll for job status and result.  
+  **Returns:**  
+    - `{ status: 'completed', result: string }`
+    - `{ status: 'failed', error: string }`
+    - `{ status: 'waiting' | 'active' }`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## Security & Resource Controls
 
-### `npm run build` fails to minify
+- **Docker containers** run with:
+  - Memory and CPU limits
+  - Network disabled
+  - Read-only code mounts
+  - Seccomp profile (on Linux)
+- **Syntax validation** is performed before execution for all languages.
+- **Timeouts** are enforced for code execution.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Supported Languages
+
+- **C++** (`cpp`)
+- **Java** (`java`)
+- **Python** (`python`)
+- **JavaScript** (`javascript`)
+
+## Troubleshooting
+
+- **Docker must be running** for code execution to work.
+- If you see errors about seccomp on Windows, the app will automatically fall back to Docker's default security.
+- Make sure Redis is running and accessible at the configured URL.
+- For syntax validation, ensure `g++`, `javac`, and `python`/`python3` are installed and available in your system PATH.
+
+## Development
+
+- **Frontend:** React, Tailwind CSS, Monaco Editor
+- **Backend:** Node.js, Express, Bull, Dockerode, Redis, (optional: MongoDB)
+- **Job queue:** Bull (with Redis)
+- **Containerization:** Docker
+
+## License
+
+MIT
+
+## Contributing
+
+Pull requests and issues are welcome!

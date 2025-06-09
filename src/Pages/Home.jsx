@@ -109,7 +109,7 @@ const Home = () => {
           setOutput(response.data.result); // Display the result once job is done
           clearInterval(intervalId); // Stop polling
         } else if (response.data.status === "failed") {
-          setOutput("Job failed");
+          setOutput(response.data.error ? `Error: ${response.data.error}` : "Job failed");
           clearInterval(intervalId); // Stop polling
         } else {
           setOutput(`Job is ${response.data.status}...`); // Update job status
@@ -138,7 +138,7 @@ const Home = () => {
         >
           <option value="cpp">C++</option>
           <option value="java">Java</option>
-          <option value="python 3">Python</option>
+          <option value="python">Python</option>
           <option value="javascript">JavaScript</option>
         </select>
         <button

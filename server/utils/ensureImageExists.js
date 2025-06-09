@@ -11,9 +11,9 @@ const ensureImageExists = async (docker, image) => {
   // Pull the image if it doesn't exist locally
   return new Promise((resolve, reject) => {
     docker.pull(image, (err, stream) => {
-      if (err) return reject(new Error("Image pull failed"));
+      if (err) return reject(new Error(`Image pull failed for ${image}: ${err.message || err}`));
       docker.modem.followProgress(stream, (err, res) =>
-        err ? reject(err) : resolve(res)
+        err ? reject(new Error(`Image pull failed for ${image}: ${err.message || err}`)) : resolve(res)
       );
     });
   });

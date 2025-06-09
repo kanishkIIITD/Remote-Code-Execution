@@ -5,6 +5,8 @@ const createTempFile = require("../utils/createTempFile");
 const ensureImageExists = require("../utils/ensureImageExists");
 const withTimeout = require("../utils/withTimeout");
 const docker = new Docker();
+const path = require("path");
+const fs = require("fs");
 
 const executeCodeInDocker = async (code, language) => {
   const timeout = 5000; // 5 seconds limit
@@ -18,6 +20,17 @@ const executeCodeInDocker = async (code, language) => {
 
   try {
     await ensureImageExists(docker, image);
+
+    // Path to seccomp profile
+    let hostConfigBase = {
+      Memory: 512 * 1024 * 1024, // 512MB memory limit
+      CpuShares: 512, // CPU limit
+    };
+    if (process.platform === "linux") {
+      const seccompProfilePath = path.resolve(__dirname, "seccomp.json");
+      const seccompProfileContent = fs.readFileSync(seccompProfilePath, "utf8");
+      hostConfigBase.SecurityOpt = [`seccomp=${seccompProfileContent}`];
+    }
 
     let container;
 
@@ -34,10 +47,10 @@ const executeCodeInDocker = async (code, language) => {
         Cmd: cmd(fileName, className),
         Tty: false,
         HostConfig: {
-          Memory: 512 * 1024 * 1024, // 512MB memory limit
-          CpuShares: 512, // CPU limit
-          Binds: [`${codeFile}:${fileName}`], // Bind the temp file into the container
+          ...hostConfigBase,
+          Binds: [`${codeFile}:${fileName}:ro`], // Read-only mount
         },
+        NetworkDisabled: true,
       });
     } else {
       // Create a Docker container that runs the code without needing a file
@@ -45,10 +58,8 @@ const executeCodeInDocker = async (code, language) => {
         Image: image,
         Cmd: cmd(code), // Dynamic command based on the language
         Tty: false,
-        HostConfig: {
-          Memory: 512 * 1024 * 1024, // 512MB memory limit
-          CpuShares: 512, // CPU limit
-        },
+        HostConfig: hostConfigBase,
+        NetworkDisabled: true,
       });
     }
 
@@ -70,7 +81,7 @@ const executeCodeInDocker = async (code, language) => {
     return output;
   } catch (error) {
     console.error("Execution error:", error.message, "\nStack:", error.stack);
-    throw new Error("Execution failed due to an error.");
+    throw new Error(error.message || "Execution failed due to an error.");
   }
 };
 

@@ -1,6 +1,8 @@
 const esprima = require("esprima");
-// const { spawnSync } = require("child_process");
-// const fs = require("fs");
+const { spawnSync } = require("child_process");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
 
 const validators = {
   javascript: (code) => {
@@ -11,37 +13,44 @@ const validators = {
       return { isValid: false, message: e.message };
     }
   },
-  // python: (code) => {
-  //   const result = spawnSync(
-  //     "python3",
-  //     ["-c", `import ast; ast.parse('''${code}''')`],
-  //     { encoding: "utf-8" }
-  //   );
-  //   if (result.status !== 0) {
-  //     return { isValid: false, message: result.stderr.trim() };
-  //   }
-  //   return { isValid: true };
-  // },
-  // cpp: (code) => {
-  //   const result = spawnSync("g++", ["-x", "c++", "-", "-fsyntax-only"], {
-  //     input: code,
-  //     encoding: "utf-8",
-  //   });
-  //   if (result.status !== 0) {
-  //     return { isValid: false, message: result.stderr.trim() };
-  //   }
-  //   return { isValid: true };
-  // },
-  // java: (code) => {
-  //   const tempFilePath = "/tmp/Main.java";
-  //   fs.writeFileSync(tempFilePath, code);
-
-  //   const result = spawnSync("javac", [tempFilePath], { encoding: "utf-8" });
-  //   if (result.status !== 0) {
-  //     return { isValid: false, message: result.stderr.trim() };
-  //   }
-  //   return { isValid: true };
-  // },
+  python: (code) => {
+    // Try both 'python3' and 'python' for compatibility
+    let result = spawnSync(
+      process.platform === "win32" ? "python" : "python3",
+      ["-c", `import ast; ast.parse('''${code.replace(/'/g, "\\'")}''')`],
+      { encoding: "utf-8" }
+    );
+    if (result.status !== 0) {
+      return { isValid: false, message: result.stderr.trim() };
+    }
+    return { isValid: true };
+  },
+  cpp: (code) => {
+    const result = spawnSync("g++", ["-x", "c++", "-", "-fsyntax-only"], {
+      input: code,
+      encoding: "utf-8",
+    });
+    if (result.status !== 0) {
+      return { isValid: false, message: result.stderr.trim() };
+    }
+    return { isValid: true };
+  },
+  java: (code) => {
+    // Use a temp file for Java code
+    const tempFilePath = path.join(os.tmpdir(), "Main.java");
+    try {
+      fs.writeFileSync(tempFilePath, code);
+      const result = spawnSync("javac", [tempFilePath], { encoding: "utf-8" });
+      if (result.status !== 0) {
+        return { isValid: false, message: result.stderr.trim() };
+      }
+      return { isValid: true };
+    } catch (e) {
+      return { isValid: false, message: e.message };
+    } finally {
+      try { fs.unlinkSync(tempFilePath); } catch {}
+    }
+  },
 };
 
 const validateCodeSyntax = (code, language) => {
