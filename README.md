@@ -2,6 +2,74 @@
 
 A full-stack web application that allows users to write, submit, and execute code in multiple languages (C++, Java, Python, JavaScript) securely in isolated Docker containers. The app features real-time job status updates, syntax validation, and robust error handling.
 
+```mermaid
+graph TD
+    subgraph "Frontend (React / Vercel)"
+        Editor[Monaco Code Editor]
+        ResultUI[Output & Error Terminal]
+        State[React Query State]
+    end
+
+    subgraph "API Gateway (Node.js / Nginx)"
+        Gateway[Express API Server]
+        Limiter[Rate Limiter & Validator]
+    end
+
+    subgraph "Task Orchestration (Redis / BullMQ)"
+        Queue[Redis-Backed Job Queue]
+        Broker[BullMQ Message Broker]
+    end
+
+    subgraph "Worker Service (Node.js / Docker Engine)"
+        Worker[Job Consumer Service]
+        DockerMgr[Docker Container Manager]
+        Logger[Output Streamer]
+    end
+
+    subgraph "Isolated Sandbox (Linux Containers)"
+        CPPU[C++ Worker Sandbox]
+        JSU[Node.js Worker Sandbox]
+        Security[Seccomp Profiles / CPU & RAM Quotas]
+    end
+
+    %% Styles
+    style Editor fill:#064e3b,stroke:#059669,color:#fff
+    style ResultUI fill:#064e3b,stroke:#059669,color:#fff
+    style State fill:#064e3b,stroke:#059669,color:#fff
+    
+    style Gateway fill:#312e81,stroke:#6366f1,color:#fff
+    style Limiter fill:#312e81,stroke:#6366f1,color:#fff
+
+    style Queue fill:#78350f,stroke:#d97706,color:#fff
+    style Broker fill:#78350f,stroke:#d97706,color:#fff
+
+    style Worker fill:#1e3a8a,stroke:#3b82f6,color:#fff
+    style DockerMgr fill:#1e3a8a,stroke:#3b82f6,color:#fff
+    style Logger fill:#1e3a8a,stroke:#3b82f6,color:#fff
+
+    style CPPU fill:#7f1d1d,stroke:#ef4444,color:#fff
+    style JSU fill:#7f1d1d,stroke:#ef4444,color:#fff
+    style Security fill:#7f1d1d,stroke:#ef4444,color:#fff
+
+    %% Interactions
+    Editor -- "POST /execute" --> Limiter
+    Limiter --> Gateway
+    Gateway -- "Enqueue Task" --> Broker
+    Broker -- "Job Storage" --> Queue
+    
+    Queue -- "Fetch Job" --> Worker
+    Worker -- "Spawn Sandbox" --> DockerMgr
+    DockerMgr -- "Apply Resource Limits" --> Security
+    Security -- "Isolated Execution" --> CPPU
+    Security -- "Isolated Execution" --> JSU
+    
+    CPPU -- "STDOUT / STDERR" --> Logger
+    JSU -- "STDOUT / STDERR" --> Logger
+    Logger -- "Status & Result" --> Gateway
+    Gateway -- "Response" --> State
+    State -- "Display Result" --> ResultUI
+```
+
 ## Features
 
 - **Multi-language support:** C++, Java, Python, JavaScript
